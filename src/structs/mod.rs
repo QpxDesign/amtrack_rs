@@ -1,4 +1,2 @@
-pub mod GetTrainsResponse;
-pub mod TrainItem;
-pub mod TrainStation;
+pub mod r#final;
 pub mod raw;

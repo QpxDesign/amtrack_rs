@@ -1,4 +1,4 @@
-use crate::structs::TrainStation::TrainStation;
+use crate::structs::r#final::TrainStation::TrainStation;
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct TrainItem {

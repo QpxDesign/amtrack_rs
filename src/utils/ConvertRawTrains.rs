@@ -2,13 +2,13 @@
 mod structs;
 extern crate chrono;
 extern crate chrono_tz;
+use crate::structs::r#final::TrainStation::TrainStation;
 use crate::structs::raw::RawResponse::RawResponse;
 use crate::structs::raw::RawStation::RawStation;
-use crate::structs::TrainStation::TrainStation;
 use chrono::offset::TimeZone;
 use chrono::NaiveDateTime;
 use chrono::Utc;
-use structs::GetTrainsResponse::GetTrainsResponse;
+use structs::r#final::GetTrainsResponse::GetTrainsResponse;
 use uuid::Uuid;
 
 pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
@@ -21,7 +21,7 @@ pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
         data: Vec::new(),
     };
     trains.into_iter().for_each(|t| {
-        let mut item = crate::structs::TrainItem::TrainItem {
+        let mut item = crate::structs::r#final::TrainItem::TrainItem {
             routeName: "".to_string(),
             trainNum: "".to_string(),
             trainID: "".to_string(), //TODO

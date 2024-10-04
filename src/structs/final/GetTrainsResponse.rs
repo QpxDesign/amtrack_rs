@@ -1,4 +1,4 @@
-use crate::structs::TrainItem::TrainItem;
+use crate::structs::r#final::TrainItem::TrainItem;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
