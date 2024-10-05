@@ -54,7 +54,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "amtrak_api_rs"
+name = "amtrack_rs"
 version = "0.1.0"
 dependencies = [
  "amtk",
