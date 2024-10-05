@@ -1,7 +1,4 @@
 use amtk::decrypt;
-use chrono::{Local, Utc};
-use rocket::tokio::time::{sleep, Duration};
-use serde_json::{Result, Value};
 #[path = "./structs/mod.rs"]
 mod structs;
 #[path = "./utils/mod.rs"]
@@ -49,8 +46,9 @@ async fn getTrainsRaw() -> String {
         .await
         .unwrap();
     let a = decrypt(str::from_utf8(&body).unwrap());
-    let data: RawResponse = serde_json::from_str(a.unwrap().as_str()).unwrap();
-    return serde_json::to_string(&data).unwrap();
+    return a.unwrap();
+    //let data: RawResponse = serde_json::from_str(a.unwrap().as_str()).unwrap();
+    //return serde_json::to_string(&data).unwrap();
 }
 
 #[get("/get-stations")]

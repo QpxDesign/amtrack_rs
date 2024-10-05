@@ -33,11 +33,20 @@ pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
         let mut item = crate::structs::r#final::TrainItem::TrainItem {
             routeName: "".to_string(),
             trainNum: "".to_string(),
-            trainID: "".to_string(), //TODO
+            trainID: "".to_string(),
             lat: 0.0,
             lon: 0.0,
             trainTimely: "".to_string(),
             stations: Vec::new(),
+            velocity: 0.0,
+            destCode: "".to_string(),
+            eventCode: "".to_string(),
+            heading: "".to_string(),
+            origCode: "".to_string(),
+            origSchDep: "".to_string(),
+            trainState: "".to_string(),
+            originTZ: "".to_string(),
+            updatedAt: "".to_string(),
         };
         if t.properties.is_none() {
             return;
@@ -61,6 +70,37 @@ pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
             item.trainID = properties.OBJECTID.unwrap().to_string();
         } else {
             item.trainID = Uuid::new_v4().to_string();
+        }
+        if properties.Velocity.is_some() {
+            item.velocity = properties.Velocity.unwrap().parse().expect("Woops");
+        }
+        if properties.DestCode.is_some() {
+            item.destCode = properties.DestCode.unwrap();
+        }
+        if properties.EventCode.is_some() {
+            item.eventCode = properties.EventCode.unwrap();
+        }
+        if properties.Heading.is_some() {
+            item.heading = properties.Heading.unwrap();
+        }
+        if properties.OrigCode.is_some() {
+            item.origCode = properties.OrigCode.unwrap();
+        }
+        if properties.OrigSchDep.is_some() {
+            item.origSchDep = properties.OrigSchDep.unwrap();
+        }
+        if properties.OriginTZ.is_some() {
+            item.originTZ = properties.OriginTZ.unwrap();
+        }
+        if properties.TrainState.is_some() {
+            item.trainState = properties.TrainState.unwrap();
+        }
+
+        if properties.updated_at.is_some() {
+            item.updatedAt = convertTime(
+                properties.updated_at.unwrap(),
+                "America/New_York".to_string(),
+            );
         }
         let mut stations: Vec<Option<String>> = Vec::new();
         stations.push(properties.Station1);
@@ -123,6 +163,7 @@ pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
                 tz: "America/New_York".to_string(),
                 bus: false,
                 schArr: "".to_string(),
+                schDep: "".to_string(),
                 arr: "".to_string(),
                 dep: "".to_string(),
                 arrCmnt: "".to_string(),
@@ -153,13 +194,19 @@ pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
                 item_station.schArr =
                     convertTime(rS.scharr.unwrap().to_string(), item_station.tz.clone());
             }
-            if rS.estarr.clone().is_some() {
+            if rS.estarr.clone().is_some() && rS.estarr.clone().unwrap() != "" {
                 item_station.arr =
                     convertTime(rS.estarr.unwrap().to_string(), item_station.tz.clone());
+            } else if rS.postarr.clone().is_some() && rS.postarr.clone().unwrap() != "" {
+                item_station.arr =
+                    convertTime(rS.postarr.unwrap().to_string(), item_station.tz.clone());
             }
-            if rS.estdep.clone().is_some() {
+            if rS.estdep.clone().is_some() && rS.estdep.clone().unwrap() != "" {
                 item_station.dep =
                     convertTime(rS.estdep.unwrap().to_string(), item_station.tz.clone());
+            } else if rS.postdep.clone().is_some() && rS.postdep.clone().unwrap() != "" {
+                item_station.dep =
+                    convertTime(rS.postdep.unwrap().to_string(), item_station.tz.clone());
             }
             if rS.estarrcmnt.clone().is_some() {
                 item_station.arrCmnt = rS.estarrcmnt.unwrap().to_string();
@@ -167,9 +214,11 @@ pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
             if rS.estdepcmnt.clone().is_some() {
                 item_station.depCmnt = rS.estdepcmnt.unwrap().to_string();
             }
-            if item_station.dep.clone() == ""
-                || stringToUnix(item_station.dep.clone()) < Utc::now().timestamp()
-            {
+            if rS.schdep.is_some() {
+                item_station.schDep =
+                    convertTime(rS.schdep.unwrap().to_string(), item_station.tz.clone());
+            }
+            if stringToUnix(item_station.dep.clone()) < Utc::now().timestamp() {
                 item_station.status = "Departed".to_string();
             } else {
                 item_station.status = "Enroute".to_string();
@@ -183,6 +232,16 @@ pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
                 item.trainTimely = item.stations[0].arrCmnt.clone();
             }
         }
+        //tripTimley
+        let tt: Vec<TrainStation> = item
+            .stations
+            .clone()
+            .into_iter()
+            .filter(|x| x.status == "Enroute")
+            .collect();
+        if tt.len() > 0 {
+            item.trainTimely = tt[0].arrCmnt.clone();
+        }
         out.data.push(item);
     });
     return Some(out);
@@ -190,7 +249,12 @@ pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
 
 fn convertTime(time: String, tz: String) -> String {
     let parse_from_str = NaiveDateTime::parse_from_str;
-    let dt = parse_from_str(&time, "%m/%d/%Y %H:%M:%S");
+    let dt;
+    if time.contains("PM") || time.contains("AM") {
+        dt = parse_from_str(&time, "%m/%d/%Y %I:%M:%S %p");
+    } else {
+        dt = parse_from_str(&time, "%m/%d/%Y %H:%M:%S");
+    }
     let timezone: chrono_tz::Tz = tz.parse().unwrap();
     let mut unix = timezone.from_local_datetime(&dt.unwrap()).single();
     if unix.is_none() {

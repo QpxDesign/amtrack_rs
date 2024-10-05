@@ -34,6 +34,8 @@ pub struct RawProperty {
     pub OrigSchDep: Option<String>,
     pub OriginTZ: Option<String>,
     pub TrainState: Option<String>,
+    pub updated_at: Option<String>,
+
     pub Station1: Option<String>,
     pub Station2: Option<String>,
     pub Station3: Option<String>,

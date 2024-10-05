@@ -9,4 +9,13 @@ pub struct TrainItem {
     pub lon: f64,
     pub trainTimely: String,
     pub stations: Vec<TrainStation>,
+    pub velocity: f64,
+    pub destCode: String,
+    pub eventCode: String,
+    pub heading: String,
+    pub origCode: String,
+    pub origSchDep: String,
+    pub originTZ: String,
+    pub trainState: String,
+    pub updatedAt: String,
 }
