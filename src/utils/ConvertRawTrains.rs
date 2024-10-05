@@ -5,11 +5,20 @@ extern crate chrono_tz;
 use crate::structs::r#final::TrainStation::TrainStation;
 use crate::structs::raw::RawResponse::RawResponse;
 use crate::structs::raw::RawStation::RawStation;
+use crate::structs::GetStationsResponse::GetStationsResponse;
 use chrono::offset::TimeZone;
+use chrono::DateTime;
 use chrono::NaiveDateTime;
 use chrono::Utc;
+use lazy_static::lazy_static;
+use std::fs::File;
+use std::io::Read;
 use structs::r#final::GetTrainsResponse::GetTrainsResponse;
 use uuid::Uuid;
+
+lazy_static! {
+    static ref STATIONS_FILE: GetStationsResponse = readStations();
+}
 
 pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
     if raw.features.is_none() {
@@ -101,64 +110,72 @@ pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
         stations.push(properties.Station45);
         stations.push(properties.Station46);
         //TODO: add in id shit
-        stations
-            .clone()
-            .into_iter()
-            .filter(|s| s.is_some())
-            .for_each(|s| {
-                let mut item_station = TrainStation {
-                    name: "".to_string(), //TODO
-                    code: "".to_string(),
-                    tz: "America/New_York".to_string(),
-                    bus: false,
-                    schArr: "".to_string(),
-                    arr: "".to_string(),
-                    dep: "".to_string(),
-                    arrCmnt: "".to_string(),
-                    depCmnt: "".to_string(),
-                    status: "".to_string(),
-                    platform: "".to_string(),
-                };
-                let rS: RawStation = serde_json::from_str(s.unwrap().as_str()).unwrap();
-                if rS.code.clone().is_some() {
-                    item_station.code = rS.code.unwrap();
+        if stations[0].is_none() {
+            println!("{}", "FUCK");
+        }
+        stations.clone().into_iter().for_each(|s| {
+            if s.is_none() {
+                return;
+            }
+            let mut item_station = TrainStation {
+                name: "".to_string(), //TODO
+                code: "".to_string(),
+                tz: "America/New_York".to_string(),
+                bus: false,
+                schArr: "".to_string(),
+                arr: "".to_string(),
+                dep: "".to_string(),
+                arrCmnt: "".to_string(),
+                depCmnt: "".to_string(),
+                status: "".to_string(), // TODO
+                platform: "".to_string(),
+            };
+            let rS: RawStation = serde_json::from_str(s.unwrap().as_str()).unwrap();
+            if rS.code.clone().is_some() {
+                item_station.code = rS.code.clone().unwrap();
+                item_station.name = getNameFromStationCode(rS.code.unwrap());
+            }
+            if rS.tz.clone().is_some() {
+                if rS.tz.clone().unwrap() == "P" {
+                    item_station.tz = "America/Los_Angeles".to_string();
                 }
-                if rS.tz.clone().is_some() {
-                    if rS.tz.clone().unwrap() == "P" {
-                        item_station.tz = "America/Los_Angeles".to_string();
-                    }
-                    if rS.tz.clone().unwrap() == "C" {
-                        item_station.tz = "America/Chicago".to_string();
-                    }
-                    if rS.tz.clone().unwrap() == "E" {
-                        item_station.tz = "America/New_York".to_string();
-                    }
-                    if rS.tz.clone().unwrap() == "M" {
-                        item_station.tz = "America/Denver".to_string();
-                    }
+                if rS.tz.clone().unwrap() == "C" {
+                    item_station.tz = "America/Chicago".to_string();
                 }
-                if rS.scharr.clone().is_some() {
-                    item_station.schArr =
-                        convertTime(rS.scharr.unwrap().to_string(), item_station.tz.clone());
+                if rS.tz.clone().unwrap() == "E" {
+                    item_station.tz = "America/New_York".to_string();
                 }
-                if rS.estarr.clone().is_some() {
-                    item_station.arr =
-                        convertTime(rS.estarr.unwrap().to_string(), item_station.tz.clone());
+                if rS.tz.clone().unwrap() == "M" {
+                    item_station.tz = "America/Denver".to_string();
                 }
-                if rS.estdep.clone().is_some() {
-                    item_station.dep =
-                        convertTime(rS.estdep.unwrap().to_string(), item_station.tz.clone());
-                }
-                if rS.estarrcmnt.clone().is_some() {
-                    item_station.arrCmnt = rS.estarrcmnt.unwrap().to_string();
-                }
-                if rS.estdepcmnt.clone().is_some() {
-                    item_station.depCmnt = rS.estdepcmnt.unwrap().to_string();
-                }
-                if item_station.dep != "" {
-                    item.stations.push(item_station);
-                }
-            });
+            }
+            if rS.scharr.clone().is_some() {
+                item_station.schArr =
+                    convertTime(rS.scharr.unwrap().to_string(), item_station.tz.clone());
+            }
+            if rS.estarr.clone().is_some() {
+                item_station.arr =
+                    convertTime(rS.estarr.unwrap().to_string(), item_station.tz.clone());
+            }
+            if rS.estdep.clone().is_some() {
+                item_station.dep =
+                    convertTime(rS.estdep.unwrap().to_string(), item_station.tz.clone());
+            }
+            if rS.estarrcmnt.clone().is_some() {
+                item_station.arrCmnt = rS.estarrcmnt.unwrap().to_string();
+            }
+            if rS.estdepcmnt.clone().is_some() {
+                item_station.depCmnt = rS.estdepcmnt.unwrap().to_string();
+            }
+            if item_station.dep.clone() == ""
+                || stringToUnix(item_station.dep.clone()) < Utc::now().timestamp()
+            {
+                item_station.status = "Departed".to_string();
+            } else {
+                item_station.status = "Enroute".to_string();
+            }
+            item.stations.push(item_station);
+        });
         if item.stations.len() != 0 {
             if item.stations[0].arrCmnt == "" && item.stations.len() > 1 {
                 item.trainTimely = item.stations[1].arrCmnt.clone();
@@ -182,4 +199,42 @@ fn convertTime(time: String, tz: String) -> String {
     let unix = unix.unwrap().timestamp();
     let u = Utc.timestamp(unix, 0).with_timezone(&timezone);
     return u.to_rfc3339();
+}
+
+fn getNameFromStationCode(stationCode: String) -> String {
+    let fr: Vec<crate::structs::GetStationsResponse::Stations> = STATIONS_FILE
+        .clone()
+        .data
+        .into_iter()
+        .filter(|x| x.code.is_some() && x.name.is_some() && x.code.clone().unwrap() == stationCode)
+        .collect();
+    if fr.len() != 0 {
+        if fr[0].name.is_some() {
+            return fr[0].name.clone().expect("woops");
+        } else {
+            return stationCode;
+        }
+    } else {
+        return stationCode;
+    }
+}
+
+fn stringToUnix(string_time: String) -> i64 {
+    if DateTime::parse_from_rfc3339(&string_time).is_ok() {
+        return DateTime::parse_from_rfc3339(&string_time)
+            .unwrap()
+            .timestamp();
+    } else {
+        return Utc::now().timestamp();
+    }
+}
+
+fn readStations() -> GetStationsResponse {
+    let mut station_data = String::new();
+    File::open("./static/get-stations.json")
+        .unwrap()
+        .read_to_string(&mut station_data)
+        .unwrap();
+    let stations: GetStationsResponse = serde_json::from_str(&station_data).unwrap();
+    return stations;
 }

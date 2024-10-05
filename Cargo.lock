@@ -60,6 +60,7 @@ dependencies = [
  "amtk",
  "chrono",
  "chrono-tz",
+ "lazy_static",
  "reqwest",
  "rocket",
  "serde",

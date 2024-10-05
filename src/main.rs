@@ -40,6 +40,19 @@ async fn getTrains() -> String {
     return b.to_owned();
 }
 
+#[get("/get-trains-raw")]
+async fn getTrainsRaw() -> String {
+    let body = reqwest::get("https://maps.amtrak.com/services/MapDataService/trains/getTrainsData")
+        .await
+        .unwrap()
+        .bytes()
+        .await
+        .unwrap();
+    let a = decrypt(str::from_utf8(&body).unwrap());
+    let data: RawResponse = serde_json::from_str(a.unwrap().as_str()).unwrap();
+    return serde_json::to_string(&data).unwrap();
+}
+
 #[get("/get-stations")]
 async fn getStations() -> String {
     let file_contents = fs::read_to_string("static/get-stations.json");
@@ -53,5 +66,5 @@ async fn getStations() -> String {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, getTrains, getStations])
+    rocket::build().mount("/", routes![index, getTrains, getStations, getTrainsRaw])
 }
