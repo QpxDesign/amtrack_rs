@@ -6,6 +6,7 @@ use crate::structs::r#final::TrainStation::TrainStation;
 use crate::structs::raw::RawResponse::RawResponse;
 use crate::structs::raw::RawStation::RawStation;
 use crate::structs::GetStationsResponse::GetStationsResponse;
+use crate::structs::GetStationsResponse::Stations;
 use chrono::offset::TimeZone;
 use chrono::DateTime;
 use chrono::NaiveDateTime;
@@ -17,7 +18,7 @@ use structs::r#final::GetTrainsResponse::GetTrainsResponse;
 use uuid::Uuid;
 
 lazy_static! {
-    static ref STATIONS_FILE: GetStationsResponse = readStations();
+    static ref STATIONS_FILE: std::vec::IntoIter<Stations> = readStations();
 }
 
 pub fn ConvertRawTrains(raw: RawResponse) -> Option<GetTrainsResponse> {
@@ -268,8 +269,6 @@ fn convertTime(time: String, tz: String) -> String {
 fn getNameFromStationCode(stationCode: String) -> String {
     let fr: Vec<crate::structs::GetStationsResponse::Stations> = STATIONS_FILE
         .clone()
-        .data
-        .into_iter()
         .filter(|x| x.code.is_some() && x.name.is_some() && x.code.clone().unwrap() == stationCode)
         .collect();
     if fr.len() != 0 {
@@ -293,12 +292,12 @@ fn stringToUnix(string_time: String) -> i64 {
     }
 }
 
-fn readStations() -> GetStationsResponse {
+fn readStations() -> std::vec::IntoIter<Stations> {
     let mut station_data = String::new();
     File::open("./static/get-stations.json")
         .unwrap()
         .read_to_string(&mut station_data)
         .unwrap();
     let stations: GetStationsResponse = serde_json::from_str(&station_data).unwrap();
-    return stations;
+    return stations.data.into_iter();
 }
