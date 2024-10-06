@@ -32,11 +32,12 @@ async fn index() -> rocket::response::content::RawHtml<&'static str> {
 }
 #[get("/get-trains")]
 async fn getTrains() -> String {
+    let CACHE_EXPIRY_SECONDS = 30;
     let mut con = REDIS_CLIENT
         .get_connection()
         .expect("Failed to establish connection");
     let cache_time: Option<i64> = con.get("amtrak_api_lastupdated").expect("REDIS FUCKED UP");
-    if cache_time.is_some() && Utc::now().timestamp() - cache_time.unwrap() < 60 * 2 {
+    if cache_time.is_some() && Utc::now().timestamp() - cache_time.unwrap() < CACHE_EXPIRY_SECONDS {
         let cached_res: Option<String> = con.get("amtrak_api_gettrains").expect("REDIS FUCKED UP");
         if cached_res.is_some() {
             println!("{}", "Returing Cached");
