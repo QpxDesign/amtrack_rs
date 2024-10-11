@@ -1,7 +1,7 @@
 #[path = "./bin/structs/mod.rs"]
-mod structs;
+pub mod structs;
 #[path = "./bin/utils/mod.rs"]
-mod utils;
+pub mod utils;
 use crate::structs::r#final::GetTrainsResponse::GetTrainsResponse;
 use crate::structs::raw::RawResponse::RawResponse;
 use amtk::decrypt;
