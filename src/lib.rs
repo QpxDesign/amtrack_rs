@@ -22,7 +22,7 @@ pub async fn GetTrains() -> Option<GetTrainsResponse> {
     return ConvertRawTrains(data);
 }
 
-pub async fn GetStations() -> Option<String> {
+pub fn GetStations() -> Option<String> {
     let file_contents = fs::read_to_string("static/get-stations.json");
     if file_contents.is_ok() {
         return Some(file_contents.unwrap());
