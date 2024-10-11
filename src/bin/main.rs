@@ -79,7 +79,7 @@ async fn getTrainsRaw() -> String {
 
 #[get("/get-stations")]
 async fn getStations() -> String {
-    let file_contents = fs::read_to_string("../../static/get-stations.json");
+    let file_contents = fs::read_to_string("static/get-stations.json");
     if file_contents.is_ok() {
         return file_contents.unwrap();
     } else {

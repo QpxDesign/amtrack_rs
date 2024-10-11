@@ -31,3 +31,18 @@ pub fn GetStations() -> Option<String> {
         return None;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_stations() {
+        println!("{}", GetStations().unwrap())
+    }
+
+    #[tokio::test]
+    async fn test_get_trains() {
+        println!("{}", GetTrains().await.unwrap().data[0].lat)
+    }
+}
