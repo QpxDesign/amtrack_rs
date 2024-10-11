@@ -2,6 +2,11 @@
 name = "amtrack_rs"
 version = "0.1.0"
 edition = "2021"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/qpxdesign/amtrack_rs/"
+authors = ["Quinn Patwardhan <qroshan5@gmail.com>"]
+description = "A fully open-source Rust-based API and Package for fetching live train and station data from Amtrak."
 
 [dependencies]
 amtk = "=0.1.0"

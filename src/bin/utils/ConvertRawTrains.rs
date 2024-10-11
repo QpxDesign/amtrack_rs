@@ -2,6 +2,7 @@
 mod structs;
 extern crate chrono;
 extern crate chrono_tz;
+use crate::structs::r#final::GetTrainsResponse::GetTrainsResponse;
 use crate::structs::r#final::TrainStation::TrainStation;
 use crate::structs::raw::RawResponse::RawResponse;
 use crate::structs::raw::RawStation::RawStation;
@@ -14,7 +15,6 @@ use chrono::Utc;
 use lazy_static::lazy_static;
 use std::fs::File;
 use std::io::Read;
-use structs::r#final::GetTrainsResponse::GetTrainsResponse;
 use uuid::Uuid;
 
 lazy_static! {
