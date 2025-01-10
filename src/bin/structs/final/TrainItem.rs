@@ -1,6 +1,6 @@
 use crate::structs::r#final::TrainStation::TrainStation;
 use serde::{Deserialize, Serialize};
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct TrainItem {
     pub routeName: String,
     pub trainNum: String,

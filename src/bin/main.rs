@@ -53,10 +53,12 @@ async fn getTrains() -> String {
     let a = decrypt(str::from_utf8(&body).unwrap());
     let data: RawResponse = serde_json::from_str(a.unwrap().as_str()).unwrap();
     let mut c = ConvertRawTrains(data).unwrap();
-    c.data
+    let x = c
+        .data
         .iter()
         .filter(|x| x.stations.len() > 0)
         .collect::<Vec<_>>();
+    c.data = x.iter().map(|&item| item.clone()).collect();
 
     let b = serde_json::to_string(&c).unwrap();
     let _: () = con
