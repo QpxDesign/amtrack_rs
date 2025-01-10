@@ -52,9 +52,13 @@ async fn getTrains() -> String {
         .unwrap();
     let a = decrypt(str::from_utf8(&body).unwrap());
     let data: RawResponse = serde_json::from_str(a.unwrap().as_str()).unwrap();
-    let c = ConvertRawTrains(data).unwrap();
-    let d: Vec<_> = c.data.iter().filter(|x| x.stations.len() > 0).collect();
-    let b = serde_json::to_string(&d).unwrap();
+    let mut c = ConvertRawTrains(data).unwrap();
+    c.data
+        .iter()
+        .filter(|x| x.stations.len() > 0)
+        .collect::<Vec<_>>();
+
+    let b = serde_json::to_string(&c).unwrap();
     let _: () = con
         .set("amtrak_api_lastupdated", Utc::now().timestamp())
         .expect("Failed to set");
