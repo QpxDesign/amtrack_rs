@@ -97,5 +97,7 @@ async fn getStations() -> String {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, getTrains, getStations, getTrainsRaw])
+    rocket::build()
+        .configure(rocket::Config::figment().merge(("port", 1971)))
+        .mount("/", routes![index, getTrains, getStations, getTrainsRaw])
 }
