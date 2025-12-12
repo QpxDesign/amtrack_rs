@@ -1,5 +1,6 @@
 use amtk::decrypt;
 use redis::Commands;
+use redis::RedisError;
 #[path = "./structs/mod.rs"]
 mod structs;
 #[path = "./utils/mod.rs"]
@@ -33,17 +34,19 @@ async fn index() -> rocket::response::content::RawHtml<&'static str> {
 #[get("/get-trains")]
 async fn getTrains() -> String {
     let CACHE_EXPIRY_SECONDS = 30;
-    let mut con = REDIS_CLIENT
-        .get_connection()
-        .expect("Failed to establish connection");
-    let cache_time: Option<i64> = con.get("amtrak_api_lastupdated").expect("REDIS FUCKED UP");
-    if cache_time.is_some() && Utc::now().timestamp() - cache_time.unwrap() < CACHE_EXPIRY_SECONDS {
-        let cached_res: Option<String> = con.get("amtrak_api_gettrains").expect("REDIS FUCKED UP");
-        if cached_res.is_some() {
-            println!("{}", "Returing Cached");
-            return cached_res.unwrap();
+    let is_redis_working = REDIS_CLIENT.get_connection().is_ok();
+    if is_redis_working {
+        let mut con = REDIS_CLIENT.get_connection().unwrap();
+        let cache_time: i64 = con.get("amtrak_api_lastupdated").unwrap_or(0);
+        if Utc::now().timestamp() - cache_time < CACHE_EXPIRY_SECONDS {
+            let cached_res: String = con.get("amtrak_api_gettrains").unwrap_or("".to_string());
+            if cached_res.len() > 5 {
+                println!("{}", "Returing Cached");
+                return cached_res;
+            }
         }
     }
+
     let body = reqwest::get("https://maps.amtrak.com/services/MapDataService/trains/getTrainsData")
         .await
         .unwrap()
@@ -61,12 +64,15 @@ async fn getTrains() -> String {
     c.data = x.iter().map(|&item| item.clone()).collect();
 
     let b = serde_json::to_string(&c).unwrap();
-    let _: () = con
-        .set("amtrak_api_lastupdated", Utc::now().timestamp())
-        .expect("Failed to set");
-    let _: () = con
-        .set("amtrak_api_gettrains", b.clone())
-        .expect("failed to set");
+    if is_redis_working {
+        let mut con = REDIS_CLIENT.get_connection().unwrap();
+        let _: () = con
+            .set("amtrak_api_lastupdated", Utc::now().timestamp())
+            .expect("Failed to set");
+        let _: () = con
+            .set("amtrak_api_gettrains", b.clone())
+            .expect("failed to set");
+    }
     return b.to_owned();
 }
 
