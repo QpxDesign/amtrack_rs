@@ -14,6 +14,7 @@ use std::fs;
 extern crate redis;
 use chrono::Utc;
 use lazy_static::lazy_static;
+use rocket_cors::{AllowedOrigins, CorsOptions};
 
 lazy_static! {
     static ref REDIS_CLIENT: redis::Client = redis::Client::open("redis://127.0.0.1:6379").unwrap();
@@ -103,7 +104,17 @@ async fn getStations() -> String {
 
 #[launch]
 fn rocket() -> _ {
+    let cors = CorsOptions::default()
+        .allowed_origins(AllowedOrigins::all())
+        .allowed_methods(
+            vec![Method::Get, Method::Post, Method::Patch]
+                .into_iter()
+                .map(From::from)
+                .collect(),
+        )
+        .allow_credentials(true);
     rocket::build()
         .configure(rocket::Config::figment().merge(("port", 1971)))
         .mount("/", routes![index, getTrains, getStations, getTrainsRaw])
+        .attach(cors)
 }
