@@ -14,6 +14,7 @@ use std::fs;
 extern crate redis;
 use chrono::Utc;
 use lazy_static::lazy_static;
+use rocket::http::Method;
 use rocket_cors::{AllowedOrigins, CorsOptions};
 
 lazy_static! {
@@ -116,5 +117,5 @@ fn rocket() -> _ {
     rocket::build()
         .configure(rocket::Config::figment().merge(("port", 1971)))
         .mount("/", routes![index, getTrains, getStations, getTrainsRaw])
-        .attach(cors)
+        .attach(cors.to_cors().unwrap())
 }
